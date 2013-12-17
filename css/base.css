@@ -1,0 +1,105 @@
+@charset "utf-8";
+
+html{color:#555;background:#fff;-webkit-text-size-adjust: 100%;-ms-text-size-adjust: 100%;}
+body{background:#fff;overflow-x: hidden;-webkit-backface-visibility: hidden;}
+
+/* 内外边距通常让各个浏览器样式的表现位置不同 */
+body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,textarea,p,blockquote,th,td,hr,button,article,aside,details,figcaption,figure,footer,header,hgroup,menu,nav,section {
+	margin:0;padding:0;
+}
+
+/* 重设 HTML5 标签, IE 需要在 js 中 createElement(TAG) */
+article,aside,details,figcaption,figure,footer,header,hgroup,menu,nav,section {display:block;}
+
+/* HTML5 媒体文件跟 img 保持一致 */
+audio,canvas,video {display: inline-block;*display: inline;*zoom: 1;}
+
+/* 要注意表单元素并不继承父级 font 的问题 */
+body,button,input,select,textarea{font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:1.5;}
+input,select,textarea{font-size:100%; outline: 0;}
+
+/* 去掉各Table  cell 的边距并让其边重合 */
+table{border-collapse:collapse;border-spacing:0;}
+
+/* IE bug fixed: th 不继承 text-align*/
+th{text-align:inherit;}
+
+/* 去除默认边框 */
+fieldset,img{border:0;}
+
+/* ie6 7 8(q) bug 显示为行内表现 */
+iframe{display:block;}
+
+/* 去掉 firefox 下此元素的边框 */
+abbr,acronym{border:0;font-variant:normal;}
+
+/* 一致的 del 样式 */
+del {text-decoration:line-through;}
+
+address,caption,cite,code,dfn,em,th,var {font-style:normal;font-weight:500;}
+
+/* 去掉列表前的标识, li 会继承 */
+ol,ul {list-style:none;}
+
+/* 对齐是排版最重要的因素*/
+caption,th {text-align:left;}
+
+/* 来自yahoo, 让标题都自定义, 适应多个系统应用 */
+h1,h2,h3,h4,h5,h6 {font-size:100%;}
+
+q:before,q:after {content:'';}
+
+/* 统一上标和下标 */
+sub, sup {font-size: 75%; line-height: 0; position: relative; vertical-align: baseline;}
+sup {top: -0.5em;}
+sub {bottom: -0.25em;}
+
+/*全局链接样式*/
+a{color:#555;cursor:pointer;}
+a:hover {text-decoration:none; color: #35aa96;}
+a:hover *{cursor:pointer;}
+
+/* 默认不显示下划线，保持页面简洁 */
+ins,a {text-decoration:none;}
+
+/* 清理浮动 */
+.fl,.fr{display: inline}
+.fl {float:left}
+.fr{float:right}
+.clear {zoom:1; /* for IE6 IE7 */}
+.clear:after {visibility:hidden;display:block;font-size:0;content:" ";clear:both;height:0;}
+
+/*雅黑字体*/
+.f-yh, .p_title { font-family:'Microsoft YaHei',Arial, Helvetica, sans-serif;}
+.p_title {font-size:24px; color: #333; font-weight: normal;}
+
+/*字体*/
+.f_14 { font-size: 14px;}
+.error {color:#ea0000;}
+.pass {color:#060;}
+.gray {color:#666;}
+.f_red { color: #b50505;}
+
+/*显示样式*/
+.show { display:block;}
+.hide { display:none;}
+.dis_ib_vt { display: inline-block; *display:inline; *zoom:1; vertical-align:top;}
+.dis_ib_vm, .vam {display: inline-block; *display:inline; *zoom:1; vertical-align:middle;}
+
+/*垂直居中对齐*/
+.vam {width:0;height: 100%;overflow: hidden;}
+
+/*弹性布局右侧元素必加类*/
+.fluid{display:table-cell;width:2000px;*display:block;*width:auto; *overflow:hidden;zoom:1;}
+
+/*阴影*/
+.shadow {box-shadow: 1px 3px 5px #666;}
+
+/*间距*/
+.mr_n { margin-right:10px;}
+.ml_n{margin-left:10px;}
+.ml_lgr{margin-left:20px;}
+.p_tb_n { padding-top:10px; padding-bottom: 10px;}
+
+
+

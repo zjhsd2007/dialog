@@ -1,0 +1,75 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+	<title>弹出框</title>
+    <link type="text/css" rel="stylesheet" href="css/base.css"/>
+    <link type="text/css" rel="stylesheet" href="css/dialog.css"/>
+	<style type="text/css">
+        body { background: #f8f8f8;}
+        #content {padding-top:300px; text-align: center;}
+		#content input {padding:5px 10px; display: inline-block;*zoom:1;margin:0 5px;}
+	</style>
+</head>
+<body>
+	<div id="content"  style="height:2000px;">
+        <input type="button" name="" value="alert" id="btn_alert" />
+        <input type="button" name="" value="confirm" id="btn_confirm" />
+        <input type="button" name="" value="prompt" id="btn_prompt" />
+        <input type="button" name="" value="load" id="btn_load" />
+        <input type="button" name="" value="loadIframe" id="btn_loadIframe" />
+        <select>
+            <option name="" value="1">test</option>
+            <option name="" value="1">test</option>
+            <option name="" value="1">test</option>
+        </select>
+	</div>
+    <p style="height:2000px;"></p>
+    <script type="text/javascript" src="js/dialog.js"></script>
+    <script type="text/javascript">
+        var btn_alert = document.getElementById('btn_alert'),
+            btn_confirm = document.getElementById('btn_confirm'),
+            btn_prompt = document.getElementById('btn_prompt'),
+            btn_load = document.getElementById('btn_load'),
+            btn_loadIframe = document.getElementById('btn_loadIframe');
+
+        btn_alert.onclick = function(){
+            dialog.alert({
+                'content':'你现在测试的是alert!'
+            })
+        };
+        btn_confirm.onclick = function(){
+            dialog.confirm({
+                'content':'你现在测试的是confirm!',
+                'callback':function(v){alert(v)}
+            })
+        };
+        btn_prompt.onclick = function(){
+            dialog.prompt({
+                'content':'你现在测试的是prompt!',
+                'defaultValue':"说点什么吧，亲！",
+                'callback':function(v){alert(v)}
+            })
+        };
+        btn_load.onclick = function(){
+            dialog.load({
+				'width':700,
+				'height':400,
+				'title':'课内网用户协议',
+                'content':'protocol.html',
+                'callback':function(v){
+                    alert(v)
+                }
+            })
+        };
+        btn_loadIframe.onclick = function(){
+            dialog.loadIframe({
+                'content':'http://www.baidu.com',
+                'height':300,
+                'width':500,
+                'callback':function(v){alert('iframe内容加载完成！')}
+            })
+        };
+    </script>
+</body>
+</html>
