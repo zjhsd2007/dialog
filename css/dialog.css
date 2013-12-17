@@ -1,0 +1,20 @@
+@charset "utf-8";
+/*弹出层样式*/
+#dialog_window{ background:#fff;width:400px;font-family:'Microsoft YaHei',Arial, Helvetica, sans-serif; box-shadow: 1px 3px 5px #666;}
+#dialog_title {background: #fff; padding: 0 0 0 10px; height:50px; line-height: 50px; text-align: right; cursor: move; color: #555;}
+#dialog_title h3 {font-size:18px;float:left; font-weight: normal;}
+#dialog_btn_close {background: url(../images/icon_close.gif) no-repeat 50% 50%; width:50px;height:50px;display:inline-block;*display: inline;*zoom:1;}
+#dialog_Content { padding:10px; clear:both;}
+#dialog_Content.dialog_icon_alert { background:url(../images/icon_tips.gif) no-repeat 20px 50%; padding-left:60px; line-height:80px; font-size:14px;}
+#dialog_btnBox {padding: 5px 0; background:#f8f8f8; text-align: center;border-radius:0 0 5px 5px;border-top:1px solid #ccc;}
+#dialog_btnBox a{ margin-right:10px;}
+#dialog_Content.isLoading {background:#fff url(../images/loading.gif) no-repeat 50% 50%;}
+#diaglo_prompt_input { display:block; border: 1px solid #ddd; padding: 5px; width:90%; margin: 8px 0;}
+.btn_enter, .btn_cancel{ color:#fff; background:#40bfa5;padding:5px 15px; margin:0 5px; display: inline-block; *zoom:1;}
+.btn_enter:hover{ color: #fff;}
+.btn_cancel { color: #555; background: #ccc;}
+.btn_cancel:hover {color: #555;}
+
+
+
+
