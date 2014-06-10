@@ -15,7 +15,6 @@
 	<div id="content"  style="height:2000px;">
         <input type="button" name="" value="alert" id="btn_alert" />
         <input type="button" name="" value="confirm" id="btn_confirm" />
-        <input type="button" name="" value="prompt" id="btn_prompt" />
         <input type="button" name="" value="load" id="btn_load" />
         <input type="button" name="" value="loadIframe" id="btn_loadIframe" />
         <select>
@@ -24,32 +23,25 @@
             <option name="" value="1">test</option>
         </select>
 	</div>
-    <p style="height:2000px;"></p>
     <script type="text/javascript" src="js/dialog.js"></script>
     <script type="text/javascript">
         var btn_alert = document.getElementById('btn_alert'),
             btn_confirm = document.getElementById('btn_confirm'),
-            btn_prompt = document.getElementById('btn_prompt'),
             btn_load = document.getElementById('btn_load'),
             btn_loadIframe = document.getElementById('btn_loadIframe');
+
+        var dialog = Dialog({single:0,pos:'self'});
 
         btn_alert.onclick = function(){
             dialog.alert({
                 'content':'你现在测试的是alert!'
-            })
+            });
         };
         btn_confirm.onclick = function(){
             dialog.confirm({
                 'content':'你现在测试的是confirm!',
                 'callback':function(v){alert(v)}
-            })
-        };
-        btn_prompt.onclick = function(){
-            dialog.prompt({
-                'content':'你现在测试的是prompt!',
-                'defaultValue':"说点什么吧，亲！",
-                'callback':function(v){alert(v)}
-            })
+            });
         };
         btn_load.onclick = function(){
             dialog.load({
@@ -60,7 +52,7 @@
                 'callback':function(v){
                     alert(v)
                 }
-            })
+            });
         };
         btn_loadIframe.onclick = function(){
             dialog.loadIframe({

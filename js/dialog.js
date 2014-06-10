@@ -1,209 +1,275 @@
 ﻿(function(win){
+    var isIE6 = !window.XMLHttpRequest;
+    var zIndex = 1000;//弹窗的层级z-index
     var tips = {
-        'title':'教材开发平台提示',
+        'title':'提示信息',
         'enter':'确定',
         'cancel':'取消',
         'close':''
-    },
-    isIE6 = !window.XMLHttpRequest,
-    cssLoaded = false,
-    isOpen = false,
-    loadCss = function(){
-        if(cssLoaded) return;
-        var cssHref = 'dialog.css';
-        var style = document.createElement('link');
-        style.type = 'text/css';
-        style.rel = 'stylesheet';
-        style.href = cssHref;
-        document.getElementsByTagName('head')[0].appendChild(style);
-        cssLoaded = true;
     };
- 
-    /*************************************对外提供的接口****************************************************/
-    var dialog = function(opts){
-        return new dialog.prototype.init(opts);
+
+    var Dialog = function(opts){
+        return new Dialog.prototype.init(opts);
     };
- 
-    dialog.prototype = {
-        constructor:dialog,
+
+    Dialog.prototype = {
+        constructor:Dialog,
         init:function(opts){
-            //loadCss();
+            this.globalSet = extend({
+                pos:'self', //弹出的位置[top,parent,self]
+                single:1 //是否只允许一个弹窗存在
+            },opts||{});
+            this.dialogs = []; //收集所有的弹窗
+            this.count = 0; //弹窗计数
         },
         alert:function(opts){
-            var _this = this;
+            var _this = this, count = this.count++;
+            var pWin = win[this.globalSet.pos];
+            var doc = pWin.document;
             var set = extend({
-                width:400,
-                height:80,
-                alertClass:1
+                width:400,  //弹窗外层宽度
+                height:80,  //弹窗内容层高度
+                type:'alert' //弹窗类型
             },opts||{});
-            if(isOpen) this.close();
-            isOpen = true;
-            this.doms = createElements(set);
-            this.doms.contentBox.innerHTML = opts.content;
-            setTimeout(function(){setCenter(_this.doms);},0);
-            this.doms.btnEnter.onclick = function(){
-                _this.close();
-                opts.callback && opts.callback(true);
+
+            //如果一个页面只允许一个弹窗
+            if(this.globalSet.single){
+                this.close();
+            }
+
+            set.zIndex = zIndex;
+            set.count = count;
+
+            //创建弹窗
+            var doms = createElements.call(this,set);
+            doms['index'] = count;
+
+            //收集弹窗
+            this.dialogs.push(doms);
+
+            //设置提示内容
+            doms.dialogBody.innerHTML = set.content;
+
+            //设置居中
+            setTimeout(function(){setCenter(doms,doc);},0);
+
+            //点击确定按钮执行的函数
+            doms.btnEnter.onclick = function(){
+                var index = this.getAttribute('count');
+                _this.close(index);
+                set.callback && set.callback(true);
             };
-            this.doms.contentTitle.onmousedown = function(e){
-                var mousePos= getMousePos(e),pos = getElementPos(_this.doms.contentOuter);
-                var _move = move(mousePos,_this.doms.contentOuter,pos.y,pos.x);
-                addEvent(document,'mousemove',_move);
-                addEvent(document,'mouseup',function(){
-                    removeEvent(document,'mousemove',_move)
+
+            //可以拖动
+            doms.dialogHeader.onmousedown = function(e){
+                var mousePos= getMousePos.call(pWin,e),pos = getElementPos.call(pWin,doms.dialogWindow);
+                var _move = move.call(pWin,mousePos,doms.dialogWindow,pos.y,pos.x);
+                addEvent(doc,'mousemove',_move);
+                addEvent(doc,'mouseup',function(){
+                    removeEvent(doc,'mousemove',_move)
                 });
             };
-            this.doms.contentTitle.ondragstart = function(){ return false;};
-            this.doms.close.onclick = function(){
-                _this.close();
+            doms.dialogHeader.ondragstart = function(){ return false;};
+
+            //关闭
+            doms.close.onclick = function(){
+                var index = this.getAttribute('count');
+                _this.close(index);
             };
- 
-            addEvent(window,'resize',function(){setCenter(_this.doms);})
+
+            addEvent(pWin,'resize',function(){setCenter(doms,doc);});
+
+            return doms;
         },
         confirm:function(opts){
             var _this = this;
-            this.alert(opts);
-            this.doms.btnBox.appendChild(this.doms.btnCancel);
-            this.doms.btnCancel.onclick = function(){
-                _this.close();
+            var set = extend({
+                type:'confirm' //弹窗类型
+            },opts||{});
+
+            var doms = this.alert(set);
+
+            doms.dialogFooter.appendChild(doms.btnCancel);
+            doms.btnCancel.onclick = function(){
+                var index = this.getAttribute('count');
+                _this.close(index);
                 opts.callback && opts.callback(false);
             }
         },
-        prompt:function(opts){
-            var _this = this,input;
-            opts.alertClass = '';
-            this.alert(opts);
-            input = createEl('<input type="text" name="" value="'+opts.defaultValue+'" id="diaglo_prompt_input"/>',this.doms.contentBox);
-            input.select();
-            this.doms.btnBox.appendChild(this.doms.btnCancel);
-            this.doms.btnEnter.onclick = function(){
-                 _this.close();
-                 opts.callback && opts.callback(input.value);
-            };
-            this.doms.btnCancel.onclick = function(){
-                _this.close();
-                opts.callback && opts.callback(null);
-            };
-            this.doms.close.onclick = function(){
-                _this.close();
-            };
-        },
         load:function(opts){
             var _this = this;
-            opts.alertClass = '';
-            this.alert(opts);
-            this.doms.contentOuter.removeChild(this.doms.btnBox);
-            this.doms.btnEnter.onclick = null;
-            _this.doms.contentBox.className = 'isLoading'
+            var set = extend({
+                width:700,
+                height:300,
+                type:'load' //弹窗类型
+            },opts||{});
+
+            var doms = this.alert(set);
+
+            doms.dialogWindow.removeChild(doms.dialogFooter);
+            doms.btnEnter.onclick = null;
+
+            addClass(doms.dialogBody,'loading');
+
+            //ajax加载内容
             ajax({
-                url:opts.content,
+                url:set.content,
                 success:function(data){
-                    _this.doms.contentBox.innerHTML = data;
+                    doms.dialogBody.innerHTML = data;
                     opts.callback && opts.callback(data);
-                    _this.doms.contentBox.className = '';
+                    removeClass(doms.dialogBody,'loading');
+                },
+                failure:function(status){
+                    throw new Error('数据加载失败:'+ status);
                 }
-            })
+            });
+
         },
         loadIframe:function(opts){
-            var _this = this,iframe = document.createElement('iframe'),doc;
-            opts.alertClass = '';
-            this.alert(opts);
-            this.doms.contentOuter.removeChild(this.doms.btnBox);
-            this.doms.btnEnter.onclick = null;
+            var _this = this,
+                doc = win[this.globalSet.pos].document,
+                iframe = doc.createElement('iframe');
+
+            var set = extend({
+                width:700,
+                height:300,
+                type:'loadIframe' //弹窗类型
+            },opts||{});
+
+            var doms = this.alert(set);
+
+            doms.dialogWindow.removeChild(doms.dialogFooter);
+            doms.btnEnter.onclick = null;
+
             iframe.style.width = '100%';
             iframe.style.height = '100%';
             iframe.frameBorder = 0;
-            _this.doms.contentBox.innerHTML = '';
-            _this.doms.contentBox.className = 'isLoading';
-            _this.doms.contentBox.appendChild(iframe);
+
+            addClass(doms.dialogBody,'loading');
+            doms.dialogBody.innerHTML = '';
+            doms.dialogBody.appendChild(iframe);
+
             iframe.attachEvent ? iframe.attachEvent('onload',_load) : (iframe.onload = _load);
             function _load(){
-                doc = iframe.contentDocument || iframe.contentWindow.document;
-                if(opts.height == 'auto'){
-                    _this.doms.contentBox.style.height = Math.max(doc.documentElement.offsetHeight,doc.body.offsetHeight) + 'px'; 
+                var innerDoc = iframe.contentDocument || iframe.contentWindow.document;
+                //IE系列会出现高度只大不小的问题
+                iframe.style.height = '0px';
+
+                if(set.height == 'auto'){
+                    doms.dialogBody.style.height = Math.max(innerDoc.documentElement.offsetHeight,innerDoc.body.offsetHeight) + 'px';
                 }
-                opts.callback && opts.callback(iframe);
-                _this.doms.contentBox.className = '';
-                setCenter(_this.doms);
-            };
+                set.callback && set.callback(iframe);
+                removeClass(doms.dialogBody,'loading');
+                iframe.style.height = '100%';
+                setCenter(doms,doc);
+            }
             iframe.src = opts.content;
         },
-        close:function(){
-            var db = document.body;
-            db.removeChild(this.doms.overlayer);
-            db.removeChild(this.doms.contentOuter);
-            isIE6 && db.removeChild(this.doms.overlayIframe);
-            this.doms.btnEnter.onclick = this.doms.btnCancel.onclick = this.doms.close.onclick = this.doms.contentTitle.onmousedown = null;
-            this.doms = null;
-            isOpen = false;
+        close:function(index){
+            var i= 0,
+                len = this.dialogs.length,
+                db =  win[this.globalSet.pos].document.body;
+
+            //如果没有弹窗
+            if(len === 0) return this;
+
+            for(;i<len;i++){
+                //当没有参数的时候，删除全部弹窗
+                if(typeof index === 'undefined'){
+                    remove(this.dialogs.splice(i,1)[0],db);
+                }else{
+                    //删除指定弹窗
+                    if(this.dialogs[i].index == index){
+                        remove(this.dialogs.splice(i,1)[0],db);
+                    }
+                }
+            }
+
         }
     };
- 
-    dialog.prototype.init.prototype = dialog.prototype;
-	win.dialog = dialog();
- 
+
+    Dialog.prototype.init.prototype = Dialog.prototype;
+    win.Dialog = Dialog;
+
     /**********************************私有方法*******************************************************/
     function extend(subClass,superClass){
         for(var key in superClass) subClass[key] = superClass[key];
         return subClass;
-    };
+    }
+    //创建弹窗所需的DOM
     function createElements(opts){
-        var db = document.body,h = Math.max(document.documentElement.clientHeight,document.body.offsetHeight);
+        var doc = win[this.globalSet.pos].document,
+            db = doc.body,
+            h = Math.max(doc.documentElement.clientHeight,db.offsetHeight);
         var width = opts.width,height = opts.height == 'auto' ? 'auto' : opts.height + 'px';
-        var overlayer = createEl('<div id="dialog_overlayer" style="position:absolute;top:0;left:0;width:100%;height:'+h+'px;background:#000;opacity:.5;filter: Alpha(Opacity=50);z-index:9999;"></div>',db),
-            overlayIframe = isIE6 && createEl('<iframe marginwidth="0" marginheight="0" align="top" scrolling="no" frameborder="0" class="dialog_HideSelect" src="" style="position:absolute;top:0;left:0;z-index:9998;width:100%;height:'+h+'px;filter: Alpha(Opacity=0);"></iframe>',db),
-            contentOuter = createEl('<div id="dialog_window" style="position:fixed;top:50%;left:50%;width:'+width+'px;z-index:10000;"></div>',db),
-            contentTitle = createEl('<div id="dialog_title"><h3>'+ (opts.title || tips.title) +'</h3></div>',contentOuter),
-            close = createEl('<a href="javascript:void(0);" id="dialog_btn_close" >'+ tips.close +'</a>',contentTitle),
-            contentBox = createEl('<div id="dialog_Content" style="height:'+height+';"'+(opts.alertClass ? 'class="dialog_icon_alert"':'')+'></div>',contentOuter),
-            btnBox = createEl('<div id="dialog_btnBox"></div>',contentOuter),
-            btnEnter = createEl('<a href="javascript:;" id="dialog_btn_enter" class="btn_enter">'+ (opts.enter||tips.enter) +'</a>',btnBox),
-            btnCancel = createEl('<a href="javascript:;" id="dialog_btn_cancel" class="btn_cancel">'+(opts.cancel|| tips.cancel) +'</a>')
-            isIE6 && (contentOuter.style.position = 'absolute');
+        var dialogMask = createEl.call(doc,'<div class="ui_dialog_mask" style="height:'+h+'px;z-index:'+(opts.zIndex)+'"></div>',db),
+            dialogMaskForIE6 = isIE6 && createEl.call(doc,'<iframe marginwidth="0" marginheight="0" align="top" scrolling="no" frameborder="0" class="ui_dialog_iframe_for_ie6" src="" style="height:'+h+'px;z-index:'+opts.zIndex+'"></iframe>',db),
+            dialogWindow = createEl.call(doc,'<div class="ui_dialog_window ui_dialog_type_'+opts.type+'" style="width:'+width+'px; z-index:'+(opts.zIndex)+'"></div>',db),
+            dialogHeader = createEl.call(doc,'<div class="ui_dialog_hd"><h3>'+ (opts.title || tips.title) +'</h3></div>',dialogWindow),
+            close = createEl.call(doc,'<a href="javascript:void(0);" class="ui_dialog_close" count="'+opts.count+'" >'+ tips.close +'</a>',dialogHeader),
+            dialogBody = createEl.call(doc,'<div class="ui_dialog_bd" style="height:'+height+';"></div>',dialogWindow),
+            dialogFooter = createEl.call(doc,'<div class="ui_dialog_ft"></div>',dialogWindow),
+            btnEnter = createEl.call(doc,'<a href="javascript:;" count="'+opts.count+'" class="btn btn_enter">'+ (opts.enter||tips.enter) +'</a>',dialogFooter),
+            btnCancel = createEl.call(doc,'<a href="javascript:;" count="'+opts.count+'" class="btn btn_cancel">'+(opts.cancel|| tips.cancel) +'</a>')
+        isIE6 && (dialogWindow.style.position = 'absolute');
         return {
-            overlayer:overlayer,
-            overlayIframe:overlayIframe,
-            contentOuter:contentOuter,
-            contentTitle:contentTitle,
+            dialogMask:dialogMask,
+            dialogMaskForIE6:dialogMaskForIE6,
+            dialogWindow:dialogWindow,
+            dialogHeader:dialogHeader,
             close:close,
-            contentBox:contentBox,
-            btnBox:btnBox,
+            dialogBody:dialogBody,
+            dialogFooter:dialogFooter,
             btnEnter:btnEnter,
             btnCancel:btnCancel
         };
-    };
+    }
+
     function createEl(str,parent){
-        var div = document.createElement('div'),el;
+        //在哪里创建节点，document就该指向该页面
+        var div = this.createElement('div'),el;
         div.innerHTML = str;
         el = div.firstChild;
         return parent ? parent.appendChild(el) : el;
-    };
-    function setCenter(doms){
+    }
+
+    function setCenter(doms,doc){
         if(!doms) return;
-        var T = doms.contentOuter,w = T.offsetWidth,h = T.offsetHeight,timer = null;
-        var dd = document.documentElement,W = dd.clientWidth,H = dd.clientHeight,dbh = document.body.offsetHeight; 
-        var st = Math.max(dd.scrollTop,document.body.scrollTop),sl = Math.max(dd.scrollLeft,document.body.scrollLeft);
+        var T = doms.dialogWindow,w = T.offsetWidth,h = T.offsetHeight,timer = null;
+        var dd = doc.documentElement,W = dd.clientWidth,H = dd.clientHeight,dbh = doc.body.offsetHeight;
+        var st = Math.max(dd.scrollTop,doc.body.scrollTop),sl = Math.max(dd.scrollLeft,doc.body.scrollLeft);
         T.style.top = (H-h)/2 + (isIE6 ? st : 0 )+'px';
         T.style.left = (W-w)/2 +(isIE6 ? sl : 0 ) + 'px';
-        doms.overlayer.style.height = Math.max(H,dbh) + 'px';
+        doms.dialogMask.style.height = Math.max(H,dbh) + 'px';
         if(isIE6){
             addEvent(window,'scroll',function(){
                 if(timer) clearTimeout(timer);
                 timer = setTimeout(function(){
-                    var t = Math.max(document.body.scrollTop,document.documentElement.scrollTop);
+                    var t = Math.max(doc.body.scrollTop,doc.documentElement.scrollTop);
                     T.style.top = (H-h)/2+ t +'px';
                 },100);
             });
-        };
-    };
+        }
+    }
+
+    function remove(doms,body){
+        if(!doms) return;
+        body.removeChild(doms.dialogMask);
+        body.removeChild(doms.dialogWindow);
+        isIE6 && body.removeChild(doms.dialogMaskForIE6);
+        doms.btnEnter.onclick = doms.btnCancel.onclick = doms.close.onclick = doms.dialogHeader.onmousedown = null;
+    }
+
     function getMousePos(e){
-        e = e || window.event;
+        var doc = this.document;
+        e = e || this.event;
         if(e.pageX || e.pageY) return { left:e.pageX,top:e.pageY};
         return {
-            left:e.clientX + document.documentElement.scrollLeft - document.body.clientLeft,
-            top:e.clientY + document.documentElement.scrollTop - document.body.clientTop
+            left:e.clientX + doc.documentElement.scrollLeft - doc.body.clientLeft,
+            top:e.clientY + doc.documentElement.scrollTop - doc.body.clientTop
         };
-    };
+    }
+
     function addEvent(el,type,fn){
         if(el.addEventListener != undefined){
             el.addEventListener(type,fn,false);
@@ -211,8 +277,9 @@
             el.attachEvent('on'+type,fn)
         }else{
             el['on'+type] = fn;
-        };
-    };
+        }
+    }
+
     function removeEvent(el,type,fn){
         if(el.removeEventListener != undefined){
             el.removeEventListener(type,fn,false);
@@ -220,34 +287,37 @@
             el.detachEvent('on'+type,fn);
         }else{
             el['on'+type] = function(){};
-        };
-    };
+        }
+    }
+
     function move(oldPos,target,t,l){
-        var dd = document.documentElement, st = Math.max(dd.scrollTop,document.body.scrollTop),sl = Math.max(dd.scrollLeft,document.body.scrollLeft)
+        var win = this;
+        var doc = this.document,dd = doc.documentElement, st = Math.max(dd.scrollTop,doc.body.scrollTop),sl = Math.max(dd.scrollLeft,doc.body.scrollLeft)
         var w = target.offsetWidth,h = target.offsetHeight,cw = dd.clientWidth,ch = dd.clientHeight;
         var rw = cw-w,rh = ch-h;
         return function(e){
             var newPos = getMousePos(e);
             //clear selection
-            if (document.selection && document.selection.empty) {
-                document.selection.empty();  //IE
-            } else if (window.getSelection) {
-                window.getSelection().removeAllRanges(); //DOM
-            };
+            if (doc.selection && doc.selection.empty) {
+                doc.selection.empty();  //IE
+            } else if (win.getSelection) {
+                win.getSelection().removeAllRanges(); //DOM
+            }
             if(isIE6){
                 target.style.top = Math.max(st,Math.min(st+rh,(t + (newPos.top - oldPos.top)))) + 'px';
                 target.style.left = Math.max(sl,Math.min(sl+rw,(l + (newPos.left - oldPos.left)))) + 'px';
             }else{
                 target.style.top = Math.max(0,Math.min(rh,(t + (newPos.top - oldPos.top) - st))) + 'px';
                 target.style.left = Math.max(0,Math.min(rw,(l + (newPos.left - oldPos.left) - sl))) + 'px';
-            };
+            }
         };
-    };
+    }
+
     function getElementPos(el){
-        var x = 0,y=0;
+        var x = 0,y=0,doc = this.document;
         if(el.getBoundingClientRect){
             var pos = el.getBoundingClientRect();
-            var d_root = document.documentElement,db = document.body;
+            var d_root = doc.documentElement,db = doc.body;
             x = pos.left + Math.max(d_root.scrollLeft,db.scrollLeft) - d_root.clientLeft;
             y = pos.top + Math.max(d_root.scrollTop,db.scrollTop) - d_root.clientTop;
         }else{
@@ -255,13 +325,31 @@
                 x += el.offsetLeft;
                 y += el.offsetTop;
                 el = el.offsetParent;
-            };
-        };
+            }
+        }
         return {
             x:x,
             y:y
         };
-    };
+    }
+
+    function hasClass(el,oClass){
+        var elClass = el.className;
+        return ~ (' '+elClass+' ').indexOf(' ' + oClass + ' ');
+    }
+
+    function addClass(el,oClass){
+        if(hasClass(el,oClass)) return;
+        var elClass = el.className;
+        el.className = (elClass+' '+ oClass).replace(/^\s+|\s+$/,'').replace(/\s+/g, ' ');
+    }
+
+    function removeClass(el,oClass){
+        if(!hasClass(el,oClass)) return;
+        var elClass = el.className;
+        el.className = (' '+elClass+' ').replace(' ' + oClass + ' ','');
+    }
+
     function ajax(opts){
         var xhr = null;
         var set = extend({
@@ -272,7 +360,7 @@
             xhr = new window.XMLHttpRequest();
         }else{
             xhr = new ActiveXObject('MSXML2.XmlHttp.6.0');
-        };
+        }
         xhr.open(set.type,set.url);
         xhr.onreadystatechange = function(){
             if(xhr.readyState == 4){
@@ -280,9 +368,10 @@
                     set.success && set.success(xhr.responseText);
                 }else{
                     set.failure && set.failure(xhr.status);
-                };
-            };
+                }
+            }
         };
         xhr.send(null);
     }
+
 })(window);
