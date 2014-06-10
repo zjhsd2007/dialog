@@ -141,8 +141,7 @@
             doms.dialogWindow.removeChild(doms.dialogFooter);
             doms.btnEnter.onclick = null;
 
-            iframe.style.width = '100%';
-            iframe.style.height = '100%';
+            iframe.style.cssText = 'width:100%;height:100%';
             iframe.frameBorder = 0;
 
             addClass(doms.dialogBody,'loading');
@@ -314,10 +313,9 @@
     }
 
     function getElementPos(el){
-        var x = 0,y=0,doc = this.document;
+        var x = 0,y=0,doc = this.document,d_root = doc.documentElement,db = doc.body;
         if(el.getBoundingClientRect){
             var pos = el.getBoundingClientRect();
-            var d_root = doc.documentElement,db = doc.body;
             x = pos.left + Math.max(d_root.scrollLeft,db.scrollLeft) - d_root.clientLeft;
             y = pos.top + Math.max(d_root.scrollTop,db.scrollTop) - d_root.clientTop;
         }else{
