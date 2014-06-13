@@ -1,6 +1,5 @@
 ﻿(function(win){
     var isIE6 = !window.XMLHttpRequest;
-    var zIndex = 1000;//弹窗的层级z-index
     var tips = {
         'title':'提示信息',
         'enter':'确定',
@@ -16,33 +15,28 @@
         constructor:Dialog,
         init:function(opts){
             this.globalSet = extend({
-                pos:'self', //弹出的位置[top,parent,self]
-                single:1 //是否只允许一个弹窗存在
+                pos:'self' //弹出的位置[top,parent,self]
             },opts||{});
             this.dialogs = []; //收集所有的弹窗
-            this.count = 0; //弹窗计数
         },
         alert:function(opts){
-            var _this = this, count = this.count++;
+            var _this = this;
             var pWin = win[this.globalSet.pos];
             var doc = pWin.document;
             var set = extend({
                 width:400,  //弹窗外层宽度
                 height:80,  //弹窗内容层高度
-                type:'alert' //弹窗类型
+                type:'alert', //弹窗类型
+                zIndex:1000  //弹窗的层级z-index
             },opts||{});
 
-            //如果一个页面只允许一个弹窗
-            if(this.globalSet.single){
+            //如果弹窗已经存在
+            if(this.dialogs.length){
                 this.close();
             }
 
-            set.zIndex = zIndex;
-            set.count = count;
-
             //创建弹窗
             var doms = createElements.call(this,set);
-            doms['index'] = count;
 
             //收集弹窗
             this.dialogs.push(doms);
@@ -55,15 +49,16 @@
 
             //点击确定按钮执行的函数
             doms.btnEnter.onclick = function(){
-                var index = this.getAttribute('count');
-                _this.close(index);
-                set.callback && set.callback(true);
+                _this.close();
+                set.callback && set.callback.call(_this,true,doms);
             };
 
-            //可以拖动
+            //拖动
             doms.dialogHeader.onmousedown = function(e){
-                var mousePos= getMousePos.call(pWin,e),pos = getElementPos.call(pWin,doms.dialogWindow);
-                var _move = move.call(pWin,mousePos,doms.dialogWindow,pos.y,pos.x);
+                var mousePos= getMousePos.call(pWin,e),
+                    pos = getElementPos.call(pWin,doms.dialogWindow),
+                    _move = move.call(pWin,mousePos,doms.dialogWindow,pos.y,pos.x);
+
                 addEvent(doc,'mousemove',_move);
                 addEvent(doc,'mouseup',function(){
                     removeEvent(doc,'mousemove',_move)
@@ -73,12 +68,15 @@
 
             //关闭
             doms.close.onclick = function(){
-                var index = this.getAttribute('count');
-                _this.close(index);
+                _this.close();
             };
 
-            addEvent(pWin,'resize',function(){setCenter(doms,doc);});
+            //resize时居中
+            addEvent(pWin,'resize',function(){
+                setCenter(doms,doc);
+            });
 
+            //返回doms对象，让下面的方法可以对其继续操作
             return doms;
         },
         confirm:function(opts){
@@ -91,9 +89,8 @@
 
             doms.dialogFooter.appendChild(doms.btnCancel);
             doms.btnCancel.onclick = function(){
-                var index = this.getAttribute('count');
-                _this.close(index);
-                opts.callback && opts.callback(false);
+                _this.close();
+                opts.callback && opts.callback.call(_this,false,doms);
             }
         },
         load:function(opts){
@@ -116,7 +113,7 @@
                 url:set.content,
                 success:function(data){
                     doms.dialogBody.innerHTML = data;
-                    opts.callback && opts.callback(data);
+                    opts.callback && opts.callback.call(_this,data,doms);
                     removeClass(doms.dialogBody,'loading');
                 },
                 failure:function(status){
@@ -157,33 +154,21 @@
                 if(set.height == 'auto'){
                     doms.dialogBody.style.height = Math.max(innerDoc.documentElement.offsetHeight,innerDoc.body.offsetHeight) + 'px';
                 }
-                set.callback && set.callback(iframe);
+                set.callback && set.callback.call(_this,iframe,doms);
                 removeClass(doms.dialogBody,'loading');
                 iframe.style.height = '100%';
                 setCenter(doms,doc);
             }
             iframe.src = opts.content;
         },
-        close:function(index){
-            var i= 0,
-                len = this.dialogs.length,
-                db =  win[this.globalSet.pos].document.body;
+        close:function(){
+            var db =  win[this.globalSet.pos].document.body,
+                len = this.dialogs.length;
 
             //如果没有弹窗
             if(len === 0) return this;
-
-            for(;i<len;i++){
-                //当没有参数的时候，删除全部弹窗
-                if(typeof index === 'undefined'){
-                    remove(this.dialogs.splice(i,1)[0],db);
-                }else{
-                    //删除指定弹窗
-                    if(this.dialogs[i].index == index){
-                        remove(this.dialogs.splice(i,1)[0],db);
-                    }
-                }
-            }
-
+            remove(this.dialogs[0],db);
+            this.dialogs.length = 0;
         }
     };
 
@@ -205,11 +190,11 @@
             dialogMaskForIE6 = isIE6 && createEl.call(doc,'<iframe marginwidth="0" marginheight="0" align="top" scrolling="no" frameborder="0" class="ui_dialog_iframe_for_ie6" src="" style="height:'+h+'px;z-index:'+opts.zIndex+'"></iframe>',db),
             dialogWindow = createEl.call(doc,'<div class="ui_dialog_window ui_dialog_type_'+opts.type+'" style="width:'+width+'px; z-index:'+(opts.zIndex)+'"></div>',db),
             dialogHeader = createEl.call(doc,'<div class="ui_dialog_hd"><h3>'+ (opts.title || tips.title) +'</h3></div>',dialogWindow),
-            close = createEl.call(doc,'<a href="javascript:void(0);" class="ui_dialog_close" count="'+opts.count+'" >'+ tips.close +'</a>',dialogHeader),
+            close = createEl.call(doc,'<a href="javascript:void(0);" class="ui_dialog_close">'+ tips.close +'</a>',dialogHeader),
             dialogBody = createEl.call(doc,'<div class="ui_dialog_bd" style="height:'+height+';"></div>',dialogWindow),
             dialogFooter = createEl.call(doc,'<div class="ui_dialog_ft"></div>',dialogWindow),
-            btnEnter = createEl.call(doc,'<a href="javascript:;" count="'+opts.count+'" class="btn btn_enter">'+ (opts.enter||tips.enter) +'</a>',dialogFooter),
-            btnCancel = createEl.call(doc,'<a href="javascript:;" count="'+opts.count+'" class="btn btn_cancel">'+(opts.cancel|| tips.cancel) +'</a>')
+            btnEnter = createEl.call(doc,'<a href="javascript:;" class="btn btn_enter">'+ (opts.enter||tips.enter) +'</a>',dialogFooter),
+            btnCancel = createEl.call(doc,'<a href="javascript:;" class="btn btn_cancel">'+(opts.cancel|| tips.cancel) +'</a>')
         isIE6 && (dialogWindow.style.position = 'absolute');
         return {
             dialogMask:dialogMask,

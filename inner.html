@@ -23,6 +23,7 @@
             <option name="" value="1">test</option>
         </select>
 	</div>
+
     <script type="text/javascript" src="js/dialog.js"></script>
     <script type="text/javascript">
         var btn_alert = document.getElementById('btn_alert'),
@@ -30,7 +31,7 @@
             btn_load = document.getElementById('btn_load'),
             btn_loadIframe = document.getElementById('btn_loadIframe');
 
-        var dialog = Dialog({pos:'self'});
+        var dialog = Dialog({pos:'top'});
 
         btn_alert.onclick = function(){
             dialog.alert({
@@ -56,7 +57,7 @@
         };
         btn_loadIframe.onclick = function(){
             dialog.loadIframe({
-                'content':'inner.html',
+                'content':'dialog.html',
                 'height':300,
                 'width':500,
                 'callback':function(v){alert('iframe内容加载完成！')}
